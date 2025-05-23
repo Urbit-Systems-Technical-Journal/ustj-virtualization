@@ -4,9 +4,9 @@
 
 \addbibresource{mss.bib}
 
-\newcommand{\authorname}{Ernest P. Worrell}
-\newcommand{\authorpatp}{\patp{sampel-palnet}}
-\newcommand{\affiliation}{Kamp Kikakee}
+\newcommand{\authorname}{N. E. Davis}
+\newcommand{\authorpatp}{\patp{lagrev-nocfep}}
+\newcommand{\affiliation}{Zorp Corp}
 
 %  Make first page footer:
 \fancypagestyle{firststyle}{%
@@ -23,11 +23,11 @@
 %  Arrange subsequent pages:
 \fancyhf{}
 \fancyhead[LE]{{\urbitfont Urbit Systems Technical Journal}}
-\fancyhead[RO]{Floating-Point Arithmetic on Deterministic Systems}
+\fancyhead[RO]{Metacircular Virtualization}
 \fancyfoot[LE,RO]{\thepage}
 
 %%MANUSCRIPT
-\title{Ernest Goes to Mars:  An Enquiry into the Foundations of Artificial Stupidity}
+\title{Metacircular Virtualization \& Practical Nock Interpretation}
 \author{\authorname~\authorpatp \\ \affiliation}
 \date{}
 
@@ -37,7 +37,6 @@
 \thispagestyle{firststyle}
 
 \begin{abstract}
-In this groundbreaking paper, we embark on a cosmic journey with the renowned character Ernest P. Worrell as he ventures into the unexplored realm of Martian computing. Drawing inspiration from Ernest's comically ingenious encounters with everyday challenges, we investigate the foundations of what we term "Artificial Stupidity." As Ernest grapples with Martian technology, we delve into the intricacies of programming errors, algorithmic missteps, and the curious phenomena that arise when human-like intelligence meets extraterrestrial computing systems. Our analysis sheds light on the unexpected intersections between humor, artificial intelligence, and the cosmic absurdity of Martian software. Join us in this interplanetary exploration as we unravel the mysteries of Artificial Stupidity through the lens of Ernest's interstellar escapades.
 \end{abstract}
 
 % We will adjust page numbering in final editing.
@@ -48,70 +47,321 @@ In this groundbreaking paper, we embark on a cosmic journey with the renowned ch
 
 \section{Introduction}
 
-Introduce the scope of your article and investigation.
+The Nock combinator calculus is used as a target instruction set architecture (\textsc{isa}) for the Hoon and Jock languages.  However, Nock itself is a ``crash-only'' paradigm which has no error handling mechanism within the terms of the \textsc{isa} itself.  Practical Nock interpreters handle this by running Nock within Nock, a process of metacircular virtualization.  This article explores the design of \lstinline[style=inlinecode]{++mock}, the basic virtualized Nock interpreter, and its role within a Nock-based kernel and standard library.
 
-\section{Background and Literature}
+\section{Background}
 
-Exposite the relevant background and literature.
+In 1958, John McCarthy began his lifelong work on the Lisp programming language \citep{McCarthy1996}.  While the form would evolve over the years, the fundamental components included S-expressions, or parenthesized lists of homoiconic code–data; \texttt{'} or quote, a deferred expression; and \texttt{eval}, a function to evaluate quoted code.\footnote{Paul Graham, in his 2001 short essay ``What Made Lisp Different'', grouped these concepts into the phrase ``The whole language always available'' \citep{Graham2001}.}  Together these components allowed McCarthy and colleague Steve Russell to implement a Lisp interpreter in Lisp itself, the first metacircular interpreter \citep{McCarthy1978}.  Such was a radical departure from the imperative programming paradigm of the time, exemplified in Fortran (1954–55); Lisp's reliance on recursion and higher-order functions was both a precursor to the functional program paradigm and a rejuvenation of the Church and Curry schools of fundamental computing logic.
+%McCarthy1996 https://www-formal.stanford.edu/jmc/history/lisp/node2.html
+%Graham2001 https://paulgraham.com/diff.html
+%McCarthy1978 McCarthy, John; Wexelblat, Richard L. (1978). History of programming languages. Association for Computing Machinery. pp. 173–183.
 
-\begin{enumerate}
-  \item  Prefer to \texttt{enumerate}.
-  \item  It is easier to refer to than \texttt{itemize}.
-\end{enumerate}
+Metacircularity was considered sufficiently important that several programming languages implemented it as a first-class feature, including Forth, TeX, and Prolog.  They have generally been used either for tightly interpreted features like debuggers and code introspection tools, or for language extensions like macros.
+
+Amin and Rompf (\citeyear{Amin2017}) analyzed how metacircular interpreters build on top of each other, each adding a new layer of abstraction.  While primarily examining a Lisp dialect, they showed practically how interpreted language extensions (even in cascading towers) can be collapsed to bottom-level interpretation, similar to Nock's own \lstinline[style=inlinecode]{++mink} function.  They concisely epitomized a line of research on reflective languages and self-interpreted languages, such as quasiquotation in Lisp \citep{Bawden1999} and Template Meta-Haskell \citep{Sheard2002}.  The ultimate point of this enquiry was to show that metacircularity was a powerful and well-grounded tool for building interpreters, and that it could be used to in fact build practical interpreters.
+%Amin2017 https://dl.acm.org/doi/10.1145/3158140
+%Bawden1999 https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=3ad9e27f0a4b1847655ba41acf1b40f8f401366b
+%Sheard2002 Sheard, Tim; Jones, Simon Peyton (3 October 2002). "Template meta-programming for Haskell". Proceedings of the 2002 ACM SIGPLAN workshop on Haskell. Association for Computing Machinery. pp. 1–16. doi:10.1145/581690.581691. ISBN 1581136056. S2CID 6096655.  https://dl.acm.org/doi/10.1145/581690.581691
+
+Thus, before Nock was even named, one of its earliest design criteria was the ability to straightforwardly implement a metacircular interpreter \citep{Yarvin2006,Yarvin2010}.  While the original motivation was to implement a hyper-Turing operator over a referentially transparent bound namespace, Nock's support for virtualization also soon proved useful for managing error traces and crashes.
+%Yarvin2006, http://lambda-the-ultimate.org/node/1269
+%Yarvin2010: https://github.com/cgyarvin/urbit/blob/1bc9086a3fd62594e8bd631744cb9bf804f6a43b/Spec/urbit/5-whynock.txt
+Yarvin wrote in an early document:
+
+\begin{quote}
+Metacircularity in most languages is a curiosity and corner case.  Programmers are routinely warned not to use it, and for good reason.  Practical metacircularity is a particular strength of Nock, or any functional assembly language.  Dynamic loading and/or virtualization works, at least logically, as in an OS.
+
+We hypothesize that a metacircular functional dissemination protocol can serve as a complete, general-purpose system software environment—there is no problem it cannot solve, in theory or in practice.  Such a protocol can be described as an ``operating function'' or \emph{OF}—the functional analog of an imperative operating system.  \citep{Yarvin2010a}
+\end{quote}
 
 \noindent
-Mark \texttt{\textbackslash noindent} in paragraphs that continue the thought of an \texttt{\textbackslash enumerate} block.
+Metacircularity thus closely ties to the idea of a functional operating system.  This is a theme that has been explored in other contexts, such as the Lisp machines and the Haskell \textsc{ghc} runtime system.  For Nock, a virtualized interpreter is no mere corner case but a first-class component of the system, both for practical execution and for resource discovery.
 
-\section{Urbit's Implementation}
 
-Oftentimes you will then turn to exploring how Urbit or closely related systems like Nockchain have approached or considered a problem.  You can look at a PR like \citetpr{urbit_urbit_6891}.
+\section{Virtualized Nock}
 
-\lstset{language=C}
-\begin{lstlisting}
-#include <stdio.h>
+Given an argument for
 
-double compute(float a, float b) {
-    return a * a + b * b;
-}
 
-int main() {
-    float x = 2.5;
-    float y = 3.7;
+Some essential components provided by vanilla Hoon for virtualizing Nock include:
 
-    double result = compute(x, y);
+\begin{itemize}
+  \item  \lstinline[style=inlinecode]{++mink}, compute bottom-level virtual Nock.
+  \item  \lstinline[style=inlinecode]{++mock}, compute formula on subject with hint.  Wraps \lstinline[style=inlinecode]{++mink}; common entrypoint.
+  \item  \lstinline[style=inlinecode]{++mule}, kick a trap (deferred computation).  Wraps \lstinline[style=inlinecode]{++mock}; common entrypoint.
+  \item  \lstinline[style=inlinecode]{++soft}, wrap a typecast as a unit (i.e., fail with \lstinline[style=inlinecode]{~} rather than crash).
+\end{itemize}
 
-    printf("Result: %lf\n", result);
+\noindent
 
-    return 0;
-}
+%https://docs.urbit.org/language/hoon/reference/stdlib/4n#mink
+
+Nock execution environments virtualize Nock for two primary reasons:
+
+\begin{enumerate}
+  \item  Crash handling (provisional execution).
+  \item  Language extension (additional opcodes).
+\end{enumerate}
+
+\subsection{Crash handling}
+
+\subsection{Language extension}
+
+Virtualization enables the extension of Nock using ``fake opcodes''.  At the current time, only opcode 12 has been added;\footnote{Compare, however, the approach of \citet{Atman2025}, pp.~XX–XX in this volume, who presented an explicitly constructive Nock-like paradigm in Ax.} this opcode provides a generalized way to supply the OS context to the scope in a way that appears like a \texttt{GOTO} or remote call but actually preserves Nock semantics including strict subject scoping.
+
+
+Hoon defines \lstinline[style=inlinecode]{+$nock} already suited for virtualized Nock execution including fake opcode 12 (Listing \ref{lst:nock}).
+
+\begin{lstlisting}[
+  float,
+  style=listingcode,
+  caption={Hoon's \texttt{+\$nock} specification},
+  escapeinside=``,
+  label={lst:nock}
+]
+::            ::::::  virtual nock
++$  nock  $^  ::  autocons
+              [p=nock q=nock]
+          $%  ::  constant
+              [%1 p=*]
+              ::  compose
+              [%2 p=nock q=nock]
+              ::  cell test
+              [%3 p=nock]
+              ::  increment
+              [%4 p=nock]
+              ::  equality test
+              [%5 p=nock q=nock]
+              ::  if, then, else
+              [%6 p=nock q=nock r=nock]
+              ::  serial compose
+              [%7 p=nock q=nock]
+              ::  push onto subject
+              [%8 p=nock q=nock]
+              ::  select arm and fire
+              [%9 p=@ q=nock]
+              ::  edit
+              [%10 p=[p=@ q=nock] q=nock]
+              ::  hint
+              [%11 p=$@(@ [p=@ q=nock]) q=nock]
+              ::  grab data from sky
+              [%12 p=nock q=nock]
+              ::  axis select
+              [%0 p=@]
+          ==
+\end{lstlisting}
+
+However, while \lstinline[style=inlinecode]{++mink} is compiled to and evaluated in Nock, it is written in Hoon and accordingly uses Hoon's affordances, particularly vases.  Vases are a pair of type and data intended to store relevant type information for correctly evaluating raw untyped Nock nouns.\footnote{See \citet{Davis2025}, pp.~XX–XX in this volume, for a discussion of vases and their role in practical Nock compilation.}  Accordingly, it is Hoon's higher-level introspective tools that facilitate \lstinline[style=inlinecode]{++mink}'s operation.
+
+The remainder of this section analyzes how each \lstinline[style=inlinecode]{++mink} implements each Nock opcode, including particularly the fake opcode 12.  The following code samples are taken from \lstinline[style=inlinecode]{/sys/hoon} in the Urbit codebase.
+
+\lstinline[style=inlinecode]{++mink} produces a head atom marking the kind of result the interpreter has raised:  if a \lstinline[style=inlinecode]{%0}, the result is a valid Nock noun; if a \lstinline[style=inlinecode]{%1}, a block is indicated (i.e. the halting problem continues); if a \lstinline[style=inlinecode]{%2}, then a deterministic error has occurred with an error trace.
+
+\subsection{Opcode 0}
+
+Opcode 0 is the identity function, which returns its argument unchanged.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+  [%0 axis=@]
+=/  part  (frag axis.formula subject)
+?~  part  [%2 trace]
+[%0 u.part]
 \end{lstlisting}
 
 \noindent
-That code snippet was part of the text, and not a standalone entity to which we make separate repeated reference.
+In essence, an axis is provisionally extracted from the subject; if this is \texttt{\textasciitilde} then an error is raised with the current execution trace, else the resulting value from that axis is produced.
 
-\begin{figure}
-  \begin{lstlisting}[language=Python, caption={Example Python Code}, label={lst:example}]
-  def hello_world():
-      print("Hello, world!")
-  \end{lstlisting}
-\end{figure}
+\subsection{Opcode 1}
 
-Refer to the code listing: Listing~\ref{lst:example}.  (Note that we don't suppress indentation since it's a float.)
+Opcode 1 is the constant function, which returns a constant value extricated from the formula.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
+\begin{lstlisting}[style=listingcode]
+  [%1 constant=*]
+[%0 constant.formula]
+\end{lstlisting}
 
-\section{A Wild Ernest Appears}
+\subsection{Opcode 2}
 
-You can have as many sections as make sense.  Only sections and subsections appear in the table of contents.
+Opcode 2 is the evaluation function, which evaluates the formula on the subject.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
-\section{Conclusion}
+\begin{lstlisting}[style=listingcode]
+  [%2 subject=* formula=*]
+=/  subject  $(formula subject.formula)
+?.  ?=(%0 -.subject)  subject
+=/  formula  $(formula formula.formula)
+?.  ?=(%0 -.formula)  formula
+%=  $
+  subject  product.subject
+  formula  product.formula
+==
+\end{lstlisting}
 
-To summarize, why did you write it?  Why do we care?  What impact should it have on Urbit development?
+\noindent
+Errors are passed directly through, whereas the resulting formula is invoked on the resulting subject.
 
-Your bibliography is a separate BibTeX file.  We use the \texttt{plainnat} bibliography style.  You can use \texttt{natbib} citation commands like \texttt{\textbackslash citep\{wikipedia\}} for parenthesized references.  Use \texttt{\textbackslash citet\{wikipedia\}} for inline references.  You can also use \texttt{\textbackslash citeauthor\{wikipedia\}} for the principal author's name.
+\subsection{Opcode 3}
 
-``You can use traditional TeX---or LaTeX---representations'' \citep{Varney1987}.
+Opcode 3 is the cell test function, which tests whether the subject is a cell.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
-“Or you can use fancy quotes—and symbols.”
+\begin{lstlisting}[style=listingcode]
+  [%3 subject=*]
+=/  argument  $(formula argument.formula)
+?.  ?=(%0 -.argument)  argument
+[%0 .?(product.argument)]
+\end{lstlisting}
+
+\noindent
+This reduces to an evaluation of a base-level opcode 3 after a preliminary check that the formula evaluates correctly.
+
+\subsection{Opcode 4}
+
+Opcode 4 is the increment function, which increments the subject.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+  [%4 subject=*]
+=/  argument  $(formula argument.formula)
+?.  ?=(%0 -.argument)  argument
+?^  product.argument  [%2 trace]
+[%0 .+(product.argument)]
+\end{lstlisting}
+
+\noindent
+Note that like opcode 3, this reduces to an evaluation of a base-level opcode 4.
+
+\subsection{Opcode 5}
+
+Opcode 5 is the equality test function, which tests whether the subject and formula are equal.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+  [%5 subject=* formula=*]
+=/  a  $(formula a.formula)
+?.  ?=(%0 -.a)  a
+=/  b  $(formula b.formula)
+?.  ?=(%0 -.b)  b
+[%0 =(product.a product.b)]
+\end{lstlisting}
+
+\noindent
+Like opcodes 3 and 4, this reduces to an evaluation of a base-level opcode 5 after checking the left-hand and right-hand formulas.
+
+\subsection{Opcode 6}
+
+Opcode 6 is the if-then-else function, which evaluates the formula on the subject and then evaluates either the first or second formula depending on the result.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+  [%6 test=* yes=* no=*]
+=/  result  $(formula test.formula)
+?.  ?=(%0 -.result)  result
+?+  product.result
+      [%2 trace]
+  %&  $(formula yes.formula)
+  %|  $(formula no.formula)
+==
+\end{lstlisting}
+
+\noindent
+TODO
+
+\subsection{Opcode 7}
+
+Opcode 7 is the composition function, which evaluates the formula on the subject and then evaluates the next formula on the result.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+  [%7 subject=* next=*]
+=/  subject  $(formula subject.formula)
+?.  ?=(%0 -.subject)  subject
+%=  $
+  subject  product.subject
+  formula  next.formula
+==
+\end{lstlisting}
+
+\noindent
+TODO
+
+> In order to interpret opcode 12, +mink takes as an argument, in addition to the subject and formula, a gate which will be invoked with the results of the subformulas of 12 as a sample. The result of executing this gate (not as interpreted by +mink but by whichever interpreter is running +mink) are then treated as the result of the Nock 12 operation.
+
+\begin{lstlisting}[style=listingcode]
+::  +mink: raw virtual nock
+::
+++  mink  !.
+  ~/  %mink
+  |=  $:  [subject=* formula=*]
+          scry=$-(^ (unit (unit)))
+      ==
+  =|  trace=(list [@ta *])
+  |^  ^-  tone
+      ?+  formula  [%2 trace]
+          [^ *]
+        =/  head  $(formula -.formula)
+        ?.  ?=(%0 -.head)  head
+        =/  tail  $(formula +.formula)
+        ?.  ?=(%0 -.tail)  tail
+        [%0 product.head product.tail]
+      ::
+          [%8 head=* next=*]
+        =/  head  $(formula head.formula)
+        ?.  ?=(%0 -.head)  head
+        %=  $
+          subject  [product.head subject]
+          formula  next.formula
+        ==
+      ::
+          [%9 axis=@ core=*]
+        =/  core  $(formula core.formula)
+        ?.  ?=(%0 -.core)  core
+        =/  arm  (frag axis.formula product.core)
+        ?~  arm  [%2 trace]
+        %=  $
+          subject  product.core
+          formula  u.arm
+        ==
+      ::
+          [%10 [axis=@ value=*] target=*]
+        ?:  =(0 axis.formula)  [%2 trace]
+        =/  target  $(formula target.formula)
+        ?.  ?=(%0 -.target)  target
+        =/  value  $(formula value.formula)
+        ?.  ?=(%0 -.value)  value
+        =/  mutant=(unit *)
+          (edit axis.formula product.target product.value)
+        ?~  mutant  [%2 trace]
+        [%0 u.mutant]
+      ::
+          [%11 tag=@ next=*]
+        =/  next  $(formula next.formula)
+        ?.  ?=(%0 -.next)  next
+        :-  %0
+        .*  subject
+        [11 tag.formula 1 product.next]
+      ::
+          [%11 [tag=@ clue=*] next=*]
+        =/  clue  $(formula clue.formula)
+        ?.  ?=(%0 -.clue)  clue
+        =/  next
+          =?    trace
+              ?=(?(%hunk %hand %lose %mean %spot) tag.formula)
+            [[tag.formula product.clue] trace]
+          $(formula next.formula)
+        ?.  ?=(%0 -.next)  next
+        :-  %0
+        .*  subject
+        [11 [tag.formula 1 product.clue] 1 product.next]
+      ::
+          [%12 ref=* path=*]
+        =/  ref  $(formula ref.formula)
+        ?.  ?=(%0 -.ref)  ref
+        =/  path  $(formula path.formula)
+        ?.  ?=(%0 -.path)  path
+        =/  result  (scry product.ref product.path)
+        ?~  result
+          [%1 product.path]
+        ?~  u.result
+          [%2 [%hunk product.ref product.path] trace]
+        [%0 u.u.result]
+      ==
+  ::
+\end{lstlisting}
 
 \printbibliography
 \end{document}
