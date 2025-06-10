@@ -27,7 +27,7 @@
 \fancyfoot[LE,RO]{\thepage}
 
 %%MANUSCRIPT
-\title{Metacircular Virtualization \& Practical Nock Interpretation}
+\title{Metacircular Virtualization \& \\ Practical Nock Interpretation}
 \author{\authorname~\authorpatp \\ \affiliation}
 \date{}
 
@@ -47,7 +47,7 @@
 
 \section{Introduction}
 
-The Nock combinator calculus is used as a target instruction set architecture (\textsc{isa}) for the Hoon and Jock languages.  However, Nock itself is a ``crash-only'' paradigm which has no error handling mechanism within the terms of the \textsc{isa} itself.  Practical Nock interpreters handle this by running Nock within Nock, a process of metacircular virtualization.  This article explores the design of \lstinline[style=inlinecode]{++mock}, the basic virtualized Nock interpreter, and its role within a Nock-based kernel and standard library.
+The Nock combinator calculus is used as a target instruction set architecture (\textsc{isa}) for the Hoon and Jock languages.  However, Nock itself is a ``crash-only'' paradigm which has no error handling mechanism within the terms of the \textsc{isa} itself.  Furthermore, sometimes information is necessary to complete a calculation which may not be present in the apparent subject.  Practical Nock interpreters handle this by running Nock within Nock, a process of metacircular virtualization.  This article explores the design of \lstinline[style=inlinecode]{++mock}, the basic virtualized Nock interpreter, and its role within a Nock-based kernel and standard library.
 
 \section{Background}
 
@@ -105,10 +105,35 @@ Nock execution environments virtualize Nock for two primary reasons:
 
 \subsection{Crash handling}
 
+While virtualization necessarily incurs some overhead relative to more direct execution, it gives the Nock programmer a way to bail (crash), trace (log with debugging information), and bind (time-limit) a computation.  In fact, stack traces are computed through virtualization, and so are guaranteed to be as correct as their implementation.
+
+A Nock virtualization environment needs to distinguish at least three kinds of results:
+
+\begin{enumerate}
+  \item  A successful result of computation, along with a valid Nock noun.
+  \item  A block, which indicates that the computation is not yet complete and should be continued.
+  \item  A halt or deterministic error, which indicates that the computation has failed and should not be continued.
+\end{enumerate}
+
+\noindent
+These correspond to standard scry results (see ``Opcode 12'' below) in this order:
+
+\begin{enumerate}
+  \item  \lstinline[style=inlinecode]{[~ ~ noun]}, a successful result.
+  \item  \lstinline[style=inlinecode]{~}, a result is not currently available (block).
+  \item  \lstinline[style=inlinecode]{[~ ~]}, a result will never become available (halt).
+\end{enumerate}
+
+\noindent
+Because Nock is untyped and we need to distinguish a ``zero'' from a ``block'', the structure of each scry result fundamentally differs from the other options.
+
+Nondeterministic errors—crashes in the runtime, such as an out-of-memory error—are not handled by or visible to the Nock interpreter as a solid-state computer.
+
+
+
 \subsection{Language extension}
 
-Virtualization enables the extension of Nock using ``fake opcodes''.  At the current time, only opcode 12 has been added;\footnote{Compare, however, the approach of \citet{Atman2025}, pp.~XX–XX in this volume, who presented an explicitly constructive Nock-like paradigm in Ax.} this opcode provides a generalized way to supply the OS context to the scope in a way that appears like a \texttt{GOTO} or remote call but actually preserves Nock semantics including strict subject scoping.
-
+Virtualization enables the extension of Nock using ``fake opcodes''.  At the current time, only opcode 12 has been added;\footnote{Compare, however, the approach of \citet{Atman2025}, pp.~XX–XX in this volume, who presented an explicitly constructive Nock-like paradigm in Ax.} this opcode provides a generalized way to supply the OS context to the scope in a way that appears like a \texttt{GOTO} or remote call but actually preserves Nock semantics including strict subject scoping.  There is a sense in which the scry operation and the bound (referentially transparent) scry namespace are identical to the metacircularity of the Nock interpreter itself.  The operating function itself can be treated as a first-class member of its own ecosystem.
 
 Hoon defines \lstinline[style=inlinecode]{+$nock} already suited for virtualized Nock execution including fake opcode 12 (Listing \ref{lst:nock}).
 
@@ -162,6 +187,7 @@ The remainder of this section analyzes how each \lstinline[style=inlinecode]{++m
 Opcode 0 is the identity function, which returns its argument unchanged.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 0 b]      /[b a]
   [%0 axis=@]
 =/  part  (frag axis.formula subject)
 ?~  part  [%2 trace]
@@ -176,6 +202,7 @@ In essence, an axis is provisionally extracted from the subject; if this is \tex
 Opcode 1 is the constant function, which returns a constant value extricated from the formula.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 1 b]      b
   [%1 constant=*]
 [%0 constant.formula]
 \end{lstlisting}
@@ -185,6 +212,7 @@ Opcode 1 is the constant function, which returns a constant value extricated fro
 Opcode 2 is the evaluation function, which evaluates the formula on the subject.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 2 b c]    *[*[a b] *[a c]]
   [%2 subject=* formula=*]
 =/  subject  $(formula subject.formula)
 ?.  ?=(%0 -.subject)  subject
@@ -204,6 +232,7 @@ Errors are passed directly through, whereas the resulting formula is invoked on 
 Opcode 3 is the cell test function, which tests whether the subject is a cell.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 3 b]      ?*[a b]
   [%3 subject=*]
 =/  argument  $(formula argument.formula)
 ?.  ?=(%0 -.argument)  argument
@@ -218,6 +247,7 @@ This reduces to an evaluation of a base-level opcode 3 after a preliminary check
 Opcode 4 is the increment function, which increments the subject.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 4 b]      +*[a b]
   [%4 subject=*]
 =/  argument  $(formula argument.formula)
 ?.  ?=(%0 -.argument)  argument
@@ -233,6 +263,7 @@ Note that like opcode 3, this reduces to an evaluation of a base-level opcode 4.
 Opcode 5 is the equality test function, which tests whether the subject and formula are equal.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 5 b c]    =[*[a b] *[a c]]
   [%5 subject=* formula=*]
 =/  a  $(formula a.formula)
 ?.  ?=(%0 -.a)  a
@@ -246,9 +277,10 @@ Like opcodes 3 and 4, this reduces to an evaluation of a base-level opcode 5 aft
 
 \subsection{Opcode 6}
 
-Opcode 6 is the if-then-else function, which evaluates the formula on the subject and then evaluates either the first or second formula depending on the result.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+Opcode 6 is the if-then-else or conditional branch function, which evaluates the formula on the subject and then evaluates either the first or second formula depending on the result.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 6 b c d]  *[a *[[c d] 0 *[[2 3] 0 *[a 4 4 b]]]]
   [%6 test=* yes=* no=*]
 =/  result  $(formula test.formula)
 ?.  ?=(%0 -.result)  result
@@ -260,13 +292,14 @@ Opcode 6 is the if-then-else function, which evaluates the formula on the subjec
 \end{lstlisting}
 
 \noindent
-TODO
+As with the direct opcode 6, there is no short-circuit evaluation in the conditional statement.
 
 \subsection{Opcode 7}
 
 Opcode 7 is the composition function, which evaluates the formula on the subject and then evaluates the next formula on the result.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
+:: *[a 7 b c]            *[*[a b] c]
   [%7 subject=* next=*]
 =/  subject  $(formula subject.formula)
 ?.  ?=(%0 -.subject)  subject
@@ -277,91 +310,170 @@ Opcode 7 is the composition function, which evaluates the formula on the subject
 \end{lstlisting}
 
 \noindent
-TODO
+This implementation simply drops the evaluation of \lstinline[style=inlinecode]{subject} through as the explicit subject for the next formula.
 
-> In order to interpret opcode 12, +mink takes as an argument, in addition to the subject and formula, a gate which will be invoked with the results of the subformulas of 12 as a sample. The result of executing this gate (not as interpreted by +mink but by whichever interpreter is running +mink) are then treated as the result of the Nock 12 operation.
+\subsection{Opcode 8}
+
+Opcode 8 is the variable push function, which pushes a value onto the subject.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
-::  +mink: raw virtual nock
-::
-++  mink  !.
-  ~/  %mink
-  |=  $:  [subject=* formula=*]
-          scry=$-(^ (unit (unit)))
-      ==
-  =|  trace=(list [@ta *])
-  |^  ^-  tone
-      ?+  formula  [%2 trace]
-          [^ *]
-        =/  head  $(formula -.formula)
-        ?.  ?=(%0 -.head)  head
-        =/  tail  $(formula +.formula)
-        ?.  ?=(%0 -.tail)  tail
-        [%0 product.head product.tail]
-      ::
-          [%8 head=* next=*]
-        =/  head  $(formula head.formula)
-        ?.  ?=(%0 -.head)  head
-        %=  $
-          subject  [product.head subject]
-          formula  next.formula
-        ==
-      ::
-          [%9 axis=@ core=*]
-        =/  core  $(formula core.formula)
-        ?.  ?=(%0 -.core)  core
-        =/  arm  (frag axis.formula product.core)
-        ?~  arm  [%2 trace]
-        %=  $
-          subject  product.core
-          formula  u.arm
-        ==
-      ::
-          [%10 [axis=@ value=*] target=*]
-        ?:  =(0 axis.formula)  [%2 trace]
-        =/  target  $(formula target.formula)
-        ?.  ?=(%0 -.target)  target
-        =/  value  $(formula value.formula)
-        ?.  ?=(%0 -.value)  value
-        =/  mutant=(unit *)
-          (edit axis.formula product.target product.value)
-        ?~  mutant  [%2 trace]
-        [%0 u.mutant]
-      ::
-          [%11 tag=@ next=*]
-        =/  next  $(formula next.formula)
-        ?.  ?=(%0 -.next)  next
-        :-  %0
-        .*  subject
-        [11 tag.formula 1 product.next]
-      ::
-          [%11 [tag=@ clue=*] next=*]
-        =/  clue  $(formula clue.formula)
-        ?.  ?=(%0 -.clue)  clue
-        =/  next
-          =?    trace
-              ?=(?(%hunk %hand %lose %mean %spot) tag.formula)
-            [[tag.formula product.clue] trace]
-          $(formula next.formula)
-        ?.  ?=(%0 -.next)  next
-        :-  %0
-        .*  subject
-        [11 [tag.formula 1 product.clue] 1 product.next]
-      ::
-          [%12 ref=* path=*]
-        =/  ref  $(formula ref.formula)
-        ?.  ?=(%0 -.ref)  ref
-        =/  path  $(formula path.formula)
-        ?.  ?=(%0 -.path)  path
-        =/  result  (scry product.ref product.path)
-        ?~  result
-          [%1 product.path]
-        ?~  u.result
-          [%2 [%hunk product.ref product.path] trace]
-        [%0 u.u.result]
-      ==
-  ::
+:: *[a 8 b c]            *[[*[a b] a] c]
+  [%8 head=* next=*]
+=/  head  $(formula head.formula)
+?.  ?=(%0 -.head)  head
+%=  $
+  subject  [product.head subject]
+  formula  next.formula
+==
 \end{lstlisting}
+
+\noindent
+Here the conceptual differences between opcode 7 and opcode 8 can be sharply compared:  how 7 requires an evaluation against the current subject, leading to something of the nature of $c(b(a))$ in terms of function composition, versus how 8 simply augments the subject.
+
+\subsection{Opcode 9}
+
+Opcode 9 is the arm select function, which selects an arm of the subject and evaluates it.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+:: *[a 9 b c]    *[*[a c] 2 [0 1] 0 b]
+  [%9 axis=@ core=*]
+=/  core  $(formula core.formula)
+?.  ?=(%0 -.core)  core
+=/  arm  (frag axis.formula product.core)
+?~  arm  [%2 trace]
+%=  $
+  subject  product.core
+  formula  u.arm
+==
+\end{lstlisting}
+
+\noindent
+For all the mechanics involved in opcode 9, the implementation is perhaps surprisingly simple.  Extract the arm at the axis and evaluate it structurally using an opcode 2.  (As an aside, Hoon which compiles to Nock aggressively utilizes lambdas to define functions at the point of use, and frequently employs a gate-building gate pattern.  This latter resolves to two opcode 9s in a series.)
+
+\subsection{Opcode 10}
+
+Opcode 10 is the edit function, which edits a value in the subject at the given axis.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+:: *[a 10 [b c] d]  #[b *[a c] *[a d]]
+  [%10 [axis=@ value=*] target=*]
+?:  =(0 axis.formula)  [%2 trace]
+=/  target  $(formula target.formula)
+?.  ?=(%0 -.target)  target
+=/  value  $(formula value.formula)
+?.  ?=(%0 -.value)  value
+=/  mutant=(unit *)
+  (edit axis.formula product.target product.value)
+?~  mutant  [%2 trace]
+[%0 u.mutant]
+\end{lstlisting}
+
+\noindent
+\lstinline[style=inlinecode]{++edit} traverses the noun to attempt to access a given axis; if it succeeds, it returns a new noun with the value at that axis replaced by the given value.  If it fails, it returns an empty \texttt{unit}, indicating without a crash that the edit failed.
+
+There's more plumbing here because of the mutation of the noun, but the essential concept of locating and replacing a valid subtree is straightforward.
+
+\subsection{Opcode 11}
+
+Opcode 11 is the hint function, which provides a hint to the interpreter about how to interpret the argument.  This is the only way to produce side effects from Nock as a pure function, and \lstinline[style=inlinecode]{++mink} respects and passes through hints raised by the virtualized Nock formula.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+:: *[a 11 b c]      *[a c]
+:: *[a 11 [b c] d]  *[[*[a c] *[a d]] 0 3]
+  [%11 tag=@ next=*]
+=/  next  $(formula next.formula)
+?.  ?=(%0 -.next)  next
+:-  %0
+.*  subject
+[11 tag.formula 1 product.next]
+::
+  [%11 [tag=@ clue=*] next=*]
+=/  clue  $(formula clue.formula)
+?.  ?=(%0 -.clue)  clue
+=/  next
+  =?    trace
+      ?=(?(%hunk %hand %lose %mean %spot) tag.formula)
+    [[tag.formula product.clue] trace]
+  $(formula next.formula)
+?.  ?=(%0 -.next)  next
+:-  %0
+.*  subject
+[11 [tag.formula 1 product.clue] 1 product.next]
+\end{lstlisting}
+
+\noindent
+Two options match for opcode 11, a static and a dynamic hint.  Even though this virtualized code ``sandboxes'' execution, the Nock formula including the \texttt{clue} is in fact evaluated.  The runtime listens for a \texttt{clue}, which is compared to a whitelisted set of supported hints, as in normal (nonvirtualized) Nock execution.
+
+Note that the argument cannot simply be discarded by the interpreter, because it may result in a crash.  Thus, as with direct Nock execution, the hint must be evaluated.\footnote{Here, this should be read ``evaluated safely'', with the caveat that some hints may result in a runtime crash.  For instance, an ill-formed \lstinline[style=inlinecode]{\%slog} hint (\texttt{printf}) will crash the interpreter if the \texttt{clue} is not structured correctly.  This is a consequence of the fact that Nock is untyped and so the interpreter cannot know whether the hint is well-formed or not.  The \lstinline[style=inlinecode]{++mink} interpreter does not attempt to validate hints, but merely passes them through to the runtime for evaluation.  (One could imagine a Nock virtualizer which itself handled certain hints as if they were ``side effects'' to the evaluation.)}
+
+\subsection{Opcode 12}
+
+Opcode 12 is the scry function, which retrieves a value from the \lstinline[style=inlinecode]{sky} namespace environment.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+
+\begin{lstlisting}[style=listingcode]
+  [%12 ref=* path=*]
+=/  ref  $(formula ref.formula)
+?.  ?=(%0 -.ref)  ref
+=/  path  $(formula path.formula)
+?.  ?=(%0 -.path)  path
+=/  result  (scry product.ref product.path)
+?~  result
+  [%1 product.path]
+?~  u.result
+  [%2 [%hunk product.ref product.path] trace]
+[%0 u.u.result]
+\end{lstlisting}
+
+\noindent
+Opcode 12 does not have a direct Nock expression since it ``steps outside'' the subject--formula pair via the expedient of the \lstinline[style=inlinecode]{scry} gate.
+
+\begin{quote}
+  In order to interpret opcode 12, \lstinline[style=inlinecode]{++mink} takes as an argument, in addition to the subject and formula, a gate which will be invoked with the results of the subformulas of 12 as a sample. The result of executing this gate (not as interpreted by \lstinline[style=inlinecode]{++mink} but by whichever interpreter is running \lstinline[style=inlinecode]{++mink}) are then treated as the result of the Nock 12 operation.  (``4n \texttt{++mink}'', Urbit documentation)
+\end{quote}
+
+Much of consequence is entailed by the use of a \lstinline[style=inlinecode]{scry} gate, which is a Hoon function that retrieves a value from an associated \lstinline[style=inlinecode]{sky} namespace (nominally, the bound scry namespace, although this is not necessarily entailed by Urbit in contemporary practice).  The \lstinline[style=inlinecode]{scry} function bears the signature \lstinline[style=inlinecode]{$-(^ (unit (unit)))}.  The result of this operation is either a noun or a block, and it is returned as a \lstinline[style=inlinecode]{(unit (unit noun))}.  These correspond to standard scry results in this order:
+
+\begin{enumerate}
+  \item  \lstinline[style=inlinecode]{[~ ~ noun]}, a successful result.
+  \item  \lstinline[style=inlinecode]{~}, a result is not currently available (block).
+  \item  \lstinline[style=inlinecode]{[~ ~]}, a result will never become available (halt).
+\end{enumerate}
+
+For instance, the reference \texttt{roof} function for Arvo, the Urbit kernel, is schematically defined as:
+
+\begin{lstlisting}[style=listingcode]
+++  roof
+  |$  [vase]
+  $-  $:  lyc=(unit (set ship))     ::  leakset
+          pov=path                  ::  provenance
+          [vis=view bem=beam]       ::  perspective
+      ==                            ::
+  %-  unit                          ::  ~: unknown
+  %-  unit                          ::  ~ ~: invalid
+  (pair mark vase)                  ::  envased result
++$  view  $@(term [way=term car=term]) ::  perspective
+\end{lstlisting}
+
+At this point, an excursus into the Arvo core is warranted.  The Arvo core is the Nock-based kernel of Urbit, and it is responsible for managing the state of the system and providing a consistent interface for agents to interact with that state.  The Arvo core is built on top of the Nock interpreter, and it uses the \lstinline[style=inlinecode]{++mink} function to interpret Nock formulas.  Each vane in the Arvo core receives a \lstinline[style=inlinecode]{+$roof} in its function call, which it can call when it needs to scry with opcode 12.  This gate provides access to the vane's state, and it is used to retrieve values from the vane's state in a way that is consistent with the Nock semantics.
+
+\lstinline[style=inlinecode]{++look} is a gate that is used to convert the \lstinline[style=inlinecode]{++mink}-compatible version of the scry handler into a version that can be used by the Arvo core.  This gate acts as a bridge between the \lstinline[style=inlinecode]{.^} dotket and the scry handler (\lstinline[style=inlinecode]{++look}) with access to the roof that came from the vane.  This pattern imposes constraints on interpreters, but provides a way to mediate access to the state of the system in a way that is consistent with Nock semantics.   Thus \lstinline[style=inlinecode]{.^} dotket gives mediated access into the \lstinline[style=inlinecode]{sky} without exposing the state of the entire system in the subject (untyped permissions-free access).
+
+\subsection{Et cetera}
+
+\lstinline[style=inlinecode]{++mink} also features some machinery to correctly implement the cell distribution rule.
+
+\lstinline[style=inlinecode]{++mink} is naturally jetted for efficiency, ultimately by \lstinline[style=inlinecode]{u3m_soft_m()} in Urbit's Vere (C) and by \lstinline[style=inlinecode]{interpret()} in NockApp's Sword (Rust), both the virtualization context for their respective runtimes.  Some internal affordances for the runtime are in place to keep execution consistent; e.g., scry gates are stored on a stack to prevent re-entry if it scries.
+
+TODO
+
+
+Finally, it is instructive to consider what the minimal required amount of code machinery would be for one to successfully implement a Nock metacircular interpreter in Nock itself.  An examination of \lstinline[style=inlinecode]{++mink} shows modest reliance on Hoon's higher-level features; tree math, for instance, in \lstinline[style=inlinecode]{++cap} for distinguishing head vs.\ tail and \lstinline[style=inlinecode]{++mas} for finding the relative address of an axis.  (None of these are particularly complicated, but it seems much more straightforward to start from a compiled Hoon implementation and cut that down.)
+
+TODO
+
+\section{Conclusion}
+
+Metacircular virtualization is a powerful tool for building interpreters, and Nock is no exception.  The design of \lstinline[style=inlinecode]{++mock} and its underlying \lstinline[style=inlinecode]{++mink} function provides a practical way to interpret Nock in a way that is both efficient and extensible.  One could imagine, for instance, a Nock interpreter cousin to \lstinline[style=inlinecode]{++mock} that is instrumented for partial evaluation of formulas (as in a debugger or syntax highlighter).  Nock supports a rich capacity to build metacircular interpreters as a first-class feature, a potential which remains as yet relatively unexplored in the Nock ecosystem.
 
 \printbibliography
 \end{document}
