@@ -14,8 +14,8 @@
 \fancyhead{}
 \fancyfoot[L]{{\footnotesize
               %% We toggle between these:
-              Manuscript submitted for review.\\
-              % {\it Urbit Systems Technical Journal} I:1 (2024):  1–3. \\
+              % Manuscript submitted for review.\\
+              {\it Urbit Systems Technical Journal} II:1 (2025):  71–97. \\
               ~ \\
               Address author correspondence to \authorpatp.
               }}
@@ -43,7 +43,7 @@
 
 % We will adjust page numbering in final editing.
 \pagenumbering{arabic}
-\setcounter{page}{1}
+\setcounter{page}{71}
 
 \tableofcontents
 
@@ -407,7 +407,7 @@ Note that the argument cannot simply be discarded by the interpreter, because it
 
 \subsection{Opcode 12}
 
-Opcode 12 is the scry function, which retrieves a value from the \lstinline[style=inlinecode]{sky} namespace environment.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+Opcode 12 is the scry function, which retrieves a value from the \lstinline[style=inlinecode]{sky} namespace environment.\footnote{There is a sense in which opcodes 6--11 are also virtualized extensions to Nock, acting as they do as macros.}  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
   [%12 ref=* path=*]
