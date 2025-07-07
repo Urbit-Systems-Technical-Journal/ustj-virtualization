@@ -487,6 +487,8 @@ Nock is a crash-only language, which means that when something goes wrong, the e
 
 Hearkening back to \citet{Amin2017}'s collapsed towers of interpreters, the affordances of \lstinline[style=inlinecode]{++mock} as a metacircular interpreter permit us to build a tower of interpreters on top of it without incurring excessive performance overhead.  As the author of \texttt{u3.md} concluded, ``we [even] simply treat Nock proper as a special case of \lstinline[style=inlinecode]{mock}.''
 
+\section{Nock in Nock}
+
 What would such an interpreter look like, and how would it relate to actual operation on a runtime in practice?  Let us extend \lstinline[style=inlinecode]{++mink} to implement a logical loobean operator.  (Call the modified gate \lstinline[style=inlinecode]{++pink}.)  This operation will be invoked with a new fake opcode 13.  Under the hood, opcode 13 will simply supply logically negate a value (via an opcode 6), much as how opcode 12 supplies a consistent Nock formula for the scry operation.  (Similar to \lstinline[style=inlinecode]{[0 0]}, we will be able to use \lstinline[style=inlinecode]{[13 1 2]} to initiate a crash if desired.)
 
 \begin{lstlisting}[style=listingcode]
