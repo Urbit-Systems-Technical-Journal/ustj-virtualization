@@ -132,7 +132,7 @@ Nondeterministic errors—crashes in the runtime, such as an out-of-memory error
 
 \subsection{Language extension}
 
-Virtualization enables the extension of Nock using ``fake opcodes''.  At the current time, only opcode 12 has been added;\footnote{Compare, however, the approach of \citet{Atman2025}, pp.~XX–XX in this volume, who presented an explicitly constructive Nock-like paradigm in Ax.} this opcode provides a generalized way to supply the OS context to the scope in a way that appears like a \texttt{GOTO} or remote call but actually preserves Nock semantics including strict subject scoping.  There is a sense in which the scry operation and the bound (referentially transparent) scry namespace are identical to the metacircularity of the Nock interpreter itself.  The operating function itself can be treated as a first-class member of its own ecosystem.
+Virtualization enables the extension of Nock using ``fake opcodes''.  At the current time, only opcode 12 has been added;\footnote{Compare, however, the approach of \patp{barpub-tarber}, pp.~189–226 in this volume, who presented an explicitly constructive Nock-like paradigm in Ax.} this opcode provides a generalized way to supply the OS context to the scope in a way that appears like a \texttt{GOTO} or remote call but actually preserves Nock semantics including strict subject scoping.  There is a sense in which the scry operation and the bound (referentially transparent) scry namespace are identical to the metacircularity of the Nock interpreter itself.  The operating function itself can be treated as a first-class member of its own ecosystem.
 
 Hoon defines \lstinline[style=inlinecode]{+$nock} already suited for virtualized Nock execution including fake opcode 12 (Listing \ref{lst:nock}).
 
@@ -175,7 +175,7 @@ Hoon defines \lstinline[style=inlinecode]{+$nock} already suited for virtualized
           ==
 \end{lstlisting}
 
-However, while \lstinline[style=inlinecode]{++mink} is compiled to and evaluated in Nock, it is written in Hoon and accordingly uses Hoon's affordances, particularly vases.  Vases are a pair of type and data intended to store relevant type information for correctly evaluating raw untyped Nock nouns.\footnote{See \citet{Davis2025}, pp.~XX–XX in this volume, for a discussion of vases and their role in practical Nock compilation.}  Accordingly, it is Hoon's higher-level introspective tools that facilitate \lstinline[style=inlinecode]{++mink}'s operation.
+However, while \lstinline[style=inlinecode]{++mink} is compiled to and evaluated in Nock, it is written in Hoon and accordingly uses Hoon's affordances, particularly vases.  Vases are a pair of type and data intended to store relevant type information for correctly evaluating raw untyped Nock nouns.\footnote{See \patp{lagrev-nocfep}, pp.~131–152 in this volume, for a discussion of vases and their role in practical Nock compilation.}  Accordingly, it is Hoon's higher-level introspective tools that facilitate \lstinline[style=inlinecode]{++mink}'s operation.
 
 The remainder of this section analyzes how each \lstinline[style=inlinecode]{++mink} implements each Nock opcode, including particularly the fake opcode 12.  The following code samples are taken from \lstinline[style=inlinecode]{/sys/hoon} in the Urbit codebase.
 
