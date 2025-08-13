@@ -172,7 +172,7 @@ Hoon defines \lstinline[style=inlinecode]{+$nock} already suited for virtualized
           ==
 \end{lstlisting}
 
-However, while \lstinline[style=inlinecode]{++mink} is compiled to and evaluated in Nock, it is written in Hoon and accordingly uses Hoon's affordances, particularly vases.  Vases are a pair of type and data intended to store relevant type information for correctly evaluating raw untyped Nock nouns.\footnote{See \patp{lagrev-nocfep}, pp.~131–152 in this volume, for a discussion of vases and their role in practical Nock compilation.}  Accordingly, it is Hoon's higher-level introspective tools that facilitate \lstinline[style=inlinecode]{++mink}'s operation.
+However, while \lstinline[style=inlinecode]{++mink} is compiled to and evaluated in Nock, it is written in Hoon and accordingly uses Hoon's affordances, particularly vases.  Vases are a pair of type and data intended to store relevant type information for correctly evaluating raw untyped Nock nouns.\footnote{See \patp{lagrev-nocfep}, pp.~131–153 in this volume, for a discussion of vases and their role in practical Nock compilation.}  Accordingly, it is Hoon's higher-level introspective tools that facilitate \lstinline[style=inlinecode]{++mink}'s operation.
 
 \sloppy
 The remainder of this section analyzes how each \lstinline[style=inlinecode]{++mink} implements each Nock opcode, including particularly the fake opcode 12.  The following code samples are taken from \lstinline[style=inlinecode]{/sys/hoon} in the Urbit codebase.
