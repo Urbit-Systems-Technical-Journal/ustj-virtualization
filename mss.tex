@@ -132,7 +132,7 @@ Nondeterministic errors—crashes in the runtime, such as an out-of-memory error
 
 \subsection{Language extension}
 
-Virtualization enables the extension of Nock using ``fake opcodes''.  At the current time, only opcode 12 has been added;\footnote{Compare, however, the approach of \patp{barpub-tarber}, pp.~189–226 in this volume, who presented an explicitly constructive Nock-like paradigm in Ax.} this opcode provides a generalized way to supply the OS context to the scope in a way that appears like a \texttt{GOTO} or remote call but actually preserves Nock semantics including strict subject scoping.  There is a sense in which the scry operation and the bound (referentially transparent) scry namespace are identical to the metacircularity of the Nock interpreter itself.  The operating function itself can be treated as a first-class member of its own ecosystem.
+Virtualization enables the extension of Nock using ``fake opcodes''.  At the current time, only opcode 12 has been added;\footnote{Compare, however, the approach of \patp{barpub-tarber}, pp.~189–225 in this volume, who presented an explicitly constructive Nock-like paradigm in Ax.} this opcode provides a generalized way to supply the OS context to the scope in a way that appears like a \texttt{GOTO} or remote call but actually preserves Nock semantics including strict subject scoping.  There is a sense in which the scry operation and the bound (referentially transparent) scry namespace are identical to the metacircularity of the Nock interpreter itself.  The operating function itself can be treated as a first-class member of its own ecosystem.
 
 Hoon defines \lstinline[style=inlinecode]{+$nock} already suited for virtualized Nock execution including fake opcode 12 (Listing \ref{lst:nock}).
 
