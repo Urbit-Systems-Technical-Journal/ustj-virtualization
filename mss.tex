@@ -1,6 +1,7 @@
 \documentclass[twoside]{article}
 
 \usepackage{ustj}
+\renewcommand{\headrulewidth}{0pt}
 
 \addbibresource{mss.bib}
 
@@ -22,9 +23,9 @@
 }
 %  Arrange subsequent pages:
 \fancyhf{}
-\fancyhead[LE]{{\urbitfont Urbit Systems Technical Journal}}
-\fancyhead[RO]{Metacircular Virtualization}
-\fancyfoot[LE,RO]{\thepage}
+% \fancyhead[LE]{{\urbitfont Urbit Systems Technical Journal}}
+% \fancyhead[RO]{Metacircular Virtualization}
+% \fancyfoot[LE,RO]{\thepage}
 
 %%MANUSCRIPT
 \title{Metacircular Virtualization \& \\ Practical Nock Interpretation}
@@ -53,13 +54,15 @@ The Nock combinator calculus is used as a target instruction set architecture (\
 
 \section{Background}
 
-In 1958, John McCarthy began his lifelong work on the Lisp programming language \citep{McCarthy1996}.  While the form would evolve over the years, the fundamental components included S-expressions, or parenthesized lists of homoiconic code–data; \texttt{'} or quote, a deferred expression; and \texttt{eval}, a function to evaluate quoted code.\footnote{Paul Graham, in his 2001 short essay ``What Made Lisp Different'', grouped these concepts into the phrase ``The whole language always available'' \citep{Graham2001}.}  Together these components allowed McCarthy and colleague Steve Russell to implement a Lisp interpreter in Lisp itself, the first metacircular interpreter \citep{McCarthy1978}.  Such was a radical departure from the imperative programming paradigm of the time, exemplified in Fortran (1954–55); Lisp's reliance on recursion and higher-order functions was both a precursor to the functional program paradigm and a rejuvenation of the Church and Curry schools of fundamental computing logic.
+In 1958, John McCarthy began his lifelong work on the Lisp programming language \citep{McCarthy1996}.  While the form would evolve over the years, the fundamental components included S-expressions, or parenthesized lists of homoiconic code–data; \texttt{'} or quote, a deferred expression; and \texttt{eval}, a function to evaluate quoted code.\footnote{Paul Graham, in his 2001 short essay ``What Made Lisp Different'', grouped these concepts into the phrase ``The whole language always available'' (\citeyear{Graham2001}).}  Together these components allowed McCarthy and colleague Steve Russell to implement a Lisp interpreter in Lisp itself, the first metacircular interpreter \citep{McCarthy1978}.  Such was a radical departure from the imperative programming paradigm of the time, exemplified in Fortran (1954–55); Lisp's reliance on recursion and higher-order functions was both a precursor to the functional program paradigm and a rejuvenation of the Church and Curry schools of fundamental computing logic.
 
 Metacircularity was considered sufficiently important that several programming languages implemented it as a first-class feature, including Forth, TeX, and Prolog.  They have generally been used either for tightly interpreted features like debuggers and code introspection tools, or for language extensions like macros.
 
-Amin and Rompf (\citeyear{Amin2017}) analyzed how metacircular interpreters build on top of each other, each adding a new layer of abstraction.  While primarily examining a Lisp dialect, they showed practically how interpreted language extensions (even in cascading towers) can be collapsed to bottom-level interpretation, similar to Nock's own \lstinline[style=inlinecode]{++mink} function.  They concisely epitomized a line of research on reflective languages and self-interpreted languages, such as quasiquotation in Lisp \citep{Bawden1999} and Template Meta-Haskell \citep{Sheard2002}.  The ultimate point of this enquiry was to show that metacircularity was a powerful and well-grounded tool for building interpreters, and that it could be used to in fact build practical interpreters.
+\sloppy
+Amin and Rompf (\citeyear{Amin2017}) analyzed how metacircular interpreters build on top of each other, each adding a new layer of abstraction.  While primarily considering a Lisp dialect, they showed how interpreted language extensions (even in cascading towers) can be collapsed to bottom-level interpretation, similar to Nock's own \lstinline[style=inlinecode]{++mink} function.  They epitomized a line of research on reflective languages and self-interpreted languages, such as quasiquotation in Lisp \citep{Bawden1999} and Template Meta-Haskell \citep{Sheard2002}.  The ultimate point of this enquiry was to show that metacircularity was a powerful and well-grounded tool for building interpreters, and that it could be used to in fact build practical interpreters.
 
-Thus, before Nock was even named, one of its earliest design criteria was the ability to straightforwardly implement a metacircular interpreter \citep{Yarvin2006,Yarvin2010}.  While the original motivation was to implement a hyper-Turing operator over a referentially transparent bound namespace, Nock's support for virtualization also soon proved useful for managing error traces and crashes.
+\sloppy
+Before Nock was even christened, one of its earliest design criteria was to straightforwardly implement a metacircular interpreter (\citeauthor{Yarvin2006}, 2006; \citeauthor{Yarvin2010}, 2010).  While the original motivation was to implement a hyper-Turing operator over a referentially transparent bound namespace, Nock's support for virtualization also soon proved useful for managing error traces and crashes.
 %Yarvin2006, http://lambda-the-ultimate.org/node/1269
 %Yarvin2010: https://github.com/cgyarvin/urbit/blob/1bc9086a3fd62594e8bd631744cb9bf804f6a43b/Spec/urbit/5-whynock.txt
 Yarvin wrote in an early document:
@@ -456,7 +459,7 @@ For instance, the reference \texttt{roof} function for Arvo, the Urbit kernel, i
 +$  view  $@(term [way=term car=term]) ::  perspective
 \end{lstlisting}
 
-At this point, an excursus into the Arvo core is warranted.  The Arvo core is the Nock-based kernel of Urbit, and it is responsible for managing the state of the system and providing a consistent interface for agents to interact with that state.  The Arvo core is built on top of the Nock interpreter, and it uses the \lstinline[style=inlinecode]{++mink} function to interpret Nock formulas.  Each vane in the Arvo core receives a \lstinline[style=inlinecode]{+$roof} in its function call, which it can call when it needs to scry with opcode 12.  This gate provides access to the vane's state, and it is used to retrieve values from the vane's state in a way that is consistent with the Nock semantics.
+An excursus is here warranted.  The Arvo core is the Nock-based kernel of Urbit, and it is responsible for managing the state of the system and providing a consistent interface for agents to interact with that state.  The Arvo core is built on top of the Nock interpreter, and it uses the \lstinline[style=inlinecode]{++mink} function to interpret Nock formulas.  Each vane in the Arvo core receives a \lstinline[style=inlinecode]{+$roof} in its function call, which it can call when it needs to scry with opcode 12.  This gate provides access to the vane's state, and it is used to retrieve values from the vane's state in a way that is consistent with the Nock semantics.
 
 \lstinline[style=inlinecode]{++look} is a gate that is used to convert the \lstinline[style=inlinecode]{++mink}-compa\-tible version of the scry handler into a version that can be used by the Arvo core.  This gate acts as a bridge between the \lstinline[style=inlinecode]{.^} dotket and the scry handler (\lstinline[style=inlinecode]{++look}) with access to the roof that came from the vane.  This pattern imposes constraints on interpreters, but provides a way to mediate access to the state of the system in a way that is consistent with Nock semantics.   Thus \lstinline[style=inlinecode]{.^} dotket gives mediated access into the \lstinline[style=inlinecode]{sky} without exposing the state of the entire system in the subject (untyped permissions-free access).
 
@@ -473,8 +476,8 @@ At this point, an excursus into the Arvo core is warranted.  The Arvo core is th
 [%0 product.head product.tail]
 \end{lstlisting}
 
-\noindent
-There is little to be said of this machinery, but particularly notice that the error is propagated from the member of the cell which crashes.
+% \noindent
+% The error is propagated from the member of the cell which crashes.
 
 \sloppy
 \lstinline[style=inlinecode]{++mink} is naturally jetted for efficiency, ultimately by \lstinline[style=inlinecode]{u3m_soft_run()} in Urbit's Vere (C) and by \lstinline[style=inlinecode]{interpret()} in NockApp's NockVM (n\'{e}e) Sword (Rust), both the virtualization context for their respective runtimes.  Some internal affordances for the runtime are in place to keep execution consistent; e.g., scry gates are stored on a stack to prevent re-entry if it scries.
@@ -483,9 +486,9 @@ Nock is a crash-only language, which means that when something goes wrong, the e
 
 \section{Nock in Nock}
 
-Hearkening back to \citeauthor{Amin2017}'s collapsed towers of interpreters, the affordances of \lstinline[style=inlinecode]{++mock} as a metacircular interpreter permit us to build a tower of interpreters on top of it without incurring excessive performance overhead.  As the author of \texttt{u3.md} concluded for the Vere C runtime, ``we [even] simply treat Nock proper as a special case of \lstinline[style=inlinecode]{mock}.''  The conventional \lstinline[style=inlinecode]{++mink} gate is built in Hoon, but what would happen if we stripped it down and built it in Nock itself with the minimal necessary machinery?  What would such an interpreter look like, and how would it relate to actual operation on a runtime in practice?
+Hearkening back to \citeauthor{Amin2017}'s collapsed towers of interpreters, the affordances of \lstinline[style=inlinecode]{++mock} as a metacircular interpreter permit us to build a tower of interpreters on top of it without incurring excessive performance overhead.  As the author of \texttt{u3.md} concluded for the Vere C runtime, ``we simply treat Nock proper as a special case of \lstinline[style=inlinecode]{mock}.''  The conventional \lstinline[style=inlinecode]{++mink} gate is built in Hoon, but what if we stripped it down and built it in Nock itself with the minimal necessary machinery?  What would such an interpreter look like, and how would it relate to actual operation on a runtime in practice?
 
-Let us extend \lstinline[style=inlinecode]{++mink} to implement a logical loobean operator.  (Call the modified gate \lstinline[style=inlinecode]{++pink}.)  This operation will be invoked with a new fake opcode 13.  Under the hood, opcode 13 will simply logically negate a value (via an opcode 6), much as how opcode 12 supplies a consistent Nock formula for the scry operation.  (Similar to \lstinline[style=inlinecode]{[0 0]}, we will be able to use \lstinline[style=inlinecode]{[13 1 2]} to initiate a crash if desired.)
+Let us extend \lstinline[style=inlinecode]{++mink} to implement a logical loobean operator.  (Call the modified gate \lstinline[style=inlinecode]{++pink}.)  This operation will be invoked with a new fake opcode 13.  Under the hood, opcode 13 will simply logically negate a value (via an opcode 6). %, much as how opcode 12 supplies a consistent Nock formula for the scry operation.  %(Similar to \lstinline[style=inlinecode]{[0 0]}, we will be able to use \lstinline[style=inlinecode]{[13 1 2]} to initiate a crash if desired.)
 
 \begin{lstlisting}[style=listingcode]
 :: *[a 13 b]                    NOT *[a b]
@@ -511,7 +514,7 @@ This is invoked as:
 
 Finally, it is instructive to consider what the minimal required amount of code machinery would be for one to successfully implement a Nock metacircular interpreter in Nock itself.  An examination of \lstinline[style=inlinecode]{++mink} shows modest reliance on Hoon's higher-level features; tree math, for instance, in \lstinline[style=inlinecode]{++cap} for distinguishing head vs.\ tail and \lstinline[style=inlinecode]{++mas} for finding the relative address of an axis.  (Neither of these are particularly complicated, but they entail some basic arithmetic operations as well.)  By omitting \lstinline[style=inlinecode]{++scry} and opcode 12, as well as reducing to a structural match with a \lstinline[style=inlinecode]{+$tone} instead of an explicit Hoon type match, one could produce a reasonably sized Hoon program compiling to something close to the minimal viable Nock virtualized interpreter.  No doubt intrepid code golfers will find it very much an upper bound rather than a lower.
 
-This Nock formula produces a working virtualized Nock interpreter derived from Hoon code with some hand-tuned design.  The input function signature is \lstinline[style=inlinecode]{[subject=* formula=*]} with output of the form \lstinline[style=inlinecode]{[@ product=*]}; if the head is \lstinline[style=inlinecode]{%0}, then the product is a valid Nock noun, while a head of \lstinline[style=inlinecode]{%bail} indicates a crash in the evaluation.  Opcode 9 calls may be addressed into the core as subject, and the formula itself is complete with an empty subject.  (Note as well that the \lstinline[style=inlinecode]{%bail} return may itself be the natural result of a valid Nock computation, which would be avoidable if we switched to a unit return instead.)
+This Nock formula produces a working virtualized Nock interpreter derived from Hoon code with some hand tuning.  The input function signature is \lstinline[style=inlinecode]{[subject=* formula=*]} with output of the form \lstinline[style=inlinecode]{[@ product=*]}; if the head is \lstinline[style=inlinecode]{%0}, then the product is a valid Nock noun, while a head of \lstinline[style=inlinecode]{%bail} indicates a crash in the evaluation.  Opcode 9 calls may be addressed into the core as subject, and the formula itself is complete with an empty subject.  %(Note as well that the \lstinline[style=inlinecode]{%bail} return may itself be the natural result of a valid Nock computation, which would be avoidable if we switched to a unit return instead.)
 
 \begin{lstlisting}[style=listingcode]
 [[1
