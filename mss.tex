@@ -54,16 +54,10 @@ The Nock combinator calculus is used as a target instruction set architecture (\
 \section{Background}
 
 In 1958, John McCarthy began his lifelong work on the Lisp programming language \citep{McCarthy1996}.  While the form would evolve over the years, the fundamental components included S-expressions, or parenthesized lists of homoiconic code–data; \texttt{'} or quote, a deferred expression; and \texttt{eval}, a function to evaluate quoted code.\footnote{Paul Graham, in his 2001 short essay ``What Made Lisp Different'', grouped these concepts into the phrase ``The whole language always available'' \citep{Graham2001}.}  Together these components allowed McCarthy and colleague Steve Russell to implement a Lisp interpreter in Lisp itself, the first metacircular interpreter \citep{McCarthy1978}.  Such was a radical departure from the imperative programming paradigm of the time, exemplified in Fortran (1954–55); Lisp's reliance on recursion and higher-order functions was both a precursor to the functional program paradigm and a rejuvenation of the Church and Curry schools of fundamental computing logic.
-%McCarthy1996 https://www-formal.stanford.edu/jmc/history/lisp/node2.html
-%Graham2001 https://paulgraham.com/diff.html
-%McCarthy1978 McCarthy, John; Wexelblat, Richard L. (1978). History of programming languages. Association for Computing Machinery. pp. 173–183.
 
 Metacircularity was considered sufficiently important that several programming languages implemented it as a first-class feature, including Forth, TeX, and Prolog.  They have generally been used either for tightly interpreted features like debuggers and code introspection tools, or for language extensions like macros.
 
 Amin and Rompf (\citeyear{Amin2017}) analyzed how metacircular interpreters build on top of each other, each adding a new layer of abstraction.  While primarily examining a Lisp dialect, they showed practically how interpreted language extensions (even in cascading towers) can be collapsed to bottom-level interpretation, similar to Nock's own \lstinline[style=inlinecode]{++mink} function.  They concisely epitomized a line of research on reflective languages and self-interpreted languages, such as quasiquotation in Lisp \citep{Bawden1999} and Template Meta-Haskell \citep{Sheard2002}.  The ultimate point of this enquiry was to show that metacircularity was a powerful and well-grounded tool for building interpreters, and that it could be used to in fact build practical interpreters.
-%Amin2017 https://dl.acm.org/doi/10.1145/3158140
-%Bawden1999 https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=3ad9e27f0a4b1847655ba41acf1b40f8f401366b
-%Sheard2002 Sheard, Tim; Jones, Simon Peyton (3 October 2002). "Template meta-programming for Haskell". Proceedings of the 2002 ACM SIGPLAN workshop on Haskell. Association for Computing Machinery. pp. 1–16. doi:10.1145/581690.581691. ISBN 1581136056. S2CID 6096655.  https://dl.acm.org/doi/10.1145/581690.581691
 
 Thus, before Nock was even named, one of its earliest design criteria was the ability to straightforwardly implement a metacircular interpreter \citep{Yarvin2006,Yarvin2010}.  While the original motivation was to implement a hyper-Turing operator over a referentially transparent bound namespace, Nock's support for virtualization also soon proved useful for managing error traces and crashes.
 %Yarvin2006, http://lambda-the-ultimate.org/node/1269
@@ -87,7 +81,7 @@ Given an argument for metacircularity, we can now examine how Nock is actually v
 \begin{itemize}
   \item  \lstinline[style=inlinecode]{++mink}, compute bottom-level virtual Nock.
   \item  \lstinline[style=inlinecode]{++mock}, compute formula on subject with hint.  Wraps \lstinline[style=inlinecode]{++mink}; common entrypoint.
-  \item  \lstinline[style=inlinecode]{++mule}, kick a trap (deferred computation).  Wraps \lstinline[style=inlinecode]{++mock}; common entrypoint.
+  \item  \sloppy \lstinline[style=inlinecode]{++mule}, kick a trap (deferred computation).  Wraps \lstinline[style=inlinecode]{++mock}; common entrypoint.
   \item  \lstinline[style=inlinecode]{++soft}, wrap a typecast as a unit (i.e., fail with \lstinline[style=inlinecode]{~} rather than crash).
 \end{itemize}
 
@@ -177,6 +171,7 @@ Hoon defines \lstinline[style=inlinecode]{+$nock} already suited for virtualized
 
 However, while \lstinline[style=inlinecode]{++mink} is compiled to and evaluated in Nock, it is written in Hoon and accordingly uses Hoon's affordances, particularly vases.  Vases are a pair of type and data intended to store relevant type information for correctly evaluating raw untyped Nock nouns.\footnote{See \patp{lagrev-nocfep}, pp.~131–152 in this volume, for a discussion of vases and their role in practical Nock compilation.}  Accordingly, it is Hoon's higher-level introspective tools that facilitate \lstinline[style=inlinecode]{++mink}'s operation.
 
+\sloppy
 The remainder of this section analyzes how each \lstinline[style=inlinecode]{++mink} implements each Nock opcode, including particularly the fake opcode 12.  The following code samples are taken from \lstinline[style=inlinecode]{/sys/hoon} in the Urbit codebase.
 
 \lstinline[style=inlinecode]{++mink} produces a head atom marking the kind of result the interpreter has raised:  if a \lstinline[style=inlinecode]{%0}, the result is a valid Nock noun; if a \lstinline[style=inlinecode]{%1}, a block is indicated (i.e. the halting problem continues); if a \lstinline[style=inlinecode]{%2}, then a deterministic error has occurred with an error trace.
@@ -198,6 +193,7 @@ In essence, an axis is provisionally extracted from the subject; if this is \tex
 
 \subsection{Opcode 1}
 
+\sloppy
 Opcode 1 is the constant function, which returns a constant value extricated from the formula.  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
@@ -487,15 +483,15 @@ Nock is a crash-only language, which means that when something goes wrong, the e
 
 \section{Nock in Nock}
 
-Hearkening back to \citet{Amin2017}'s collapsed towers of interpreters, the affordances of \lstinline[style=inlinecode]{++mock} as a metacircular interpreter permit us to build a tower of interpreters on top of it without incurring excessive performance overhead.  As the author of \texttt{u3.md} concluded, ``we [even] simply treat Nock proper as a special case of \lstinline[style=inlinecode]{mock}.''  The conventional \lstinline[style=inlinecode]{++mink} gate is built in Hoon, but what would happen if we stripped it down and built it in Nock itself with the minimal necessary machinery?  What would such an interpreter look like, and how would it relate to actual operation on a runtime in practice?
+Hearkening back to \citeauthor{Amin2017}'s collapsed towers of interpreters, the affordances of \lstinline[style=inlinecode]{++mock} as a metacircular interpreter permit us to build a tower of interpreters on top of it without incurring excessive performance overhead.  As the author of \texttt{u3.md} concluded for the Vere C runtime, ``we [even] simply treat Nock proper as a special case of \lstinline[style=inlinecode]{mock}.''  The conventional \lstinline[style=inlinecode]{++mink} gate is built in Hoon, but what would happen if we stripped it down and built it in Nock itself with the minimal necessary machinery?  What would such an interpreter look like, and how would it relate to actual operation on a runtime in practice?
 
-Let us extend \lstinline[style=inlinecode]{++mink} to implement a logical loobean operator.  (Call the modified gate \lstinline[style=inlinecode]{++pink}.)  This operation will be invoked with a new fake opcode 13.  Under the hood, opcode 13 will simply supply logically negate a value (via an opcode 6), much as how opcode 12 supplies a consistent Nock formula for the scry operation.  (Similar to \lstinline[style=inlinecode]{[0 0]}, we will be able to use \lstinline[style=inlinecode]{[13 1 2]} to initiate a crash if desired.)
+Let us extend \lstinline[style=inlinecode]{++mink} to implement a logical loobean operator.  (Call the modified gate \lstinline[style=inlinecode]{++pink}.)  This operation will be invoked with a new fake opcode 13.  Under the hood, opcode 13 will simply logically negate a value (via an opcode 6), much as how opcode 12 supplies a consistent Nock formula for the scry operation.  (Similar to \lstinline[style=inlinecode]{[0 0]}, we will be able to use \lstinline[style=inlinecode]{[13 1 2]} to initiate a crash if desired.)
 
 \begin{lstlisting}[style=listingcode]
-:: *[a 13 b]      NOT *[a b]
+:: *[a 13 b]                    NOT *[a b]
   [%13 subject=*]
 =/  argument  $(formula argument.formula)
-?.  ?=(%0 -.argument)  argument
+?.  ?=(%0 -.argument)  [%2 trace]
 ?^  product.argument  [%2 trace]
 ?:  =(%1 product.argument)  [%0 %.y]
 ?:  =(%0 product.argument)  [%0 %.n]
@@ -869,9 +865,10 @@ Metacircular virtualization is a powerful tool for building interpreters, and No
 % ::
 % ::  +jink, a search for the smallest possible +mock Nock virtualized interpreter
 % ::
+% \begin{lstlisting}[style=listingcode]
 % =<
-%   :-  (jink [42 [0 1]])
-%   (jink [42 [0 0]])
+%   :: :-  (jink [42 [0 1]])
+%   (jink [42 [13 0 1]])
 % |%
 % ::
 % ++  unit
@@ -1048,6 +1045,14 @@ Metacircular virtualization is a powerful tool for building interpreters, and No
 %     :-  %0
 %     .*  subject
 %     [11 tag.formula 1 product.next]
+%     :: *[a 13 b]
+%       [%13 argument=*]
+%     =/  argument  $(formula argument.formula)
+%     ?.  ?=(%0 -.argument)  (dec argument)
+%     ?^  product.argument  [%2 trace]
+%     ?:  =(%1 product.argument)  [%0 %.y]
+%     ?:  =(%0 product.argument)  [%0 %.n]
+%     [%2 trace]
 %   ==
 %   ::
 %   ++  frag
@@ -1079,3 +1084,4 @@ Metacircular virtualization is a powerful tool for building interpreters, and No
 %     ==
 %   --
 % --
+% \end{lstlisting}
