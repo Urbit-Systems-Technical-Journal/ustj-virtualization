@@ -56,7 +56,7 @@ The Nock combinator calculus is used as a target instruction set architecture (\
 
 In 1958, John McCarthy began his lifelong work on the Lisp programming language \citep{McCarthy1996}.  While the form would evolve over the years, the fundamental components included S-expressions, or parenthesized lists of homoiconic code–data; \texttt{'} or quote, a deferred expression; and \texttt{eval}, a function to evaluate quoted code.\footnote{Paul Graham, in his 2001 short essay ``What Made Lisp Different'', grouped these concepts into the phrase ``The whole language always available'' (\citeyear{Graham2001}).}  Together these components allowed McCarthy and colleague Steve Russell to implement a Lisp interpreter in Lisp itself, the first metacircular interpreter \citep{McCarthy1978}.  Such was a radical departure from the imperative programming paradigm of the time, exemplified in Fortran (1954–55); Lisp's reliance on recursion and higher-order functions was both a precursor to the functional program paradigm and a rejuvenation of the Church and Curry schools of fundamental computing logic.
 
-Metacircularity was considered sufficiently important that several programming languages implemented it as a first-class feature, including Forth, TeX, and Prolog.  They have generally been used either for tightly interpreted features like debuggers and code introspection tools, or for language extensions like macros.
+Metacircularity was considered sufficiently important that several programming languages implemented it as a first-class feature, including Forth, \TeX, and Prolog.  They have generally been used either for tightly interpreted features like debuggers and code introspection tools, or for language extensions like macros.
 
 \sloppy
 Amin and Rompf (\citeyear{Amin2017}) analyzed how metacircular interpreters build on top of each other, each adding a new layer of abstraction.  While primarily considering a Lisp dialect, they showed how interpreted language extensions (even in cascading towers) can be collapsed to bottom-level interpretation, similar to Nock's own \lstinline[style=inlinecode]{++mink} function.  They epitomized a line of research on reflective languages and self-interpreted languages, such as quasiquotation in Lisp \citep{Bawden1999} and Template Meta-Haskell \citep{Sheard2002}.  The ultimate point of this enquiry was to show that metacircularity was a powerful and well-grounded tool for building interpreters, and that it could be used to in fact build practical interpreters.
@@ -346,7 +346,7 @@ Opcode 9 is the arm select function, which selects an arm of the subject and eva
 \end{lstlisting}
 
 \noindent
-For all the mechanics involved in opcode 9, the implementation is perhaps surprisingly simple.  Extract the arm at the axis and evaluate it structurally using an opcode 2.  (As an aside, Hoon which compiles to Nock aggressively utilizes lambdas to define functions at the point of use, and frequently employs a gate-building gate pattern.  This latter resolves to two opcode 9s in a series.)
+For all the mechanics involved in opcode 9, the implementation is perhaps surprisingly simple.  Extract the arm at the axis and evaluate it structurally using an opcode 2.  (As an aside, Hoon which compiles to Nock aggressively utilizes lambdas to define functions at the point of use, and frequently employs a gate-building gate pattern.  This latter resolves to two opcodes 9 in series.)
 
 \subsection{Opcode 10}
 
@@ -406,7 +406,7 @@ Note that the argument cannot simply be discarded by the interpreter, because it
 
 \subsection{Opcode 12}
 
-Opcode 12 is the scry function, which retrieves a value from the \lstinline[style=inlinecode]{sky} namespace environment.\footnote{There is a sense in which opcodes 6--11 are also virtualized extensions to Nock, acting as they do as macros.}  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
+Opcode 12 is the scry function, which retrieves a value from the \lstinline[style=inlinecode]{sky} namespace environment.\footnote{There is a sense in which opcodes 6--11 are also virtualized extensions to Nock, acting as they do as macros.  See \patp{niblyx-malnus}, pp.~47–70 in this volume.}  This is implemented in \lstinline[style=inlinecode]{++mink} as follows:
 
 \begin{lstlisting}[style=listingcode]
   [%12 ref=* path=*]
@@ -480,7 +480,7 @@ An excursus is here warranted.  The Arvo core is the Nock-based kernel of Urbit,
 % The error is propagated from the member of the cell which crashes.
 
 \sloppy
-\lstinline[style=inlinecode]{++mink} is naturally jetted for efficiency, ultimately by \lstinline[style=inlinecode]{u3m_soft_run()} in Urbit's Vere (C) and by \lstinline[style=inlinecode]{interpret()} in NockApp's NockVM (n\'{e}e) Sword (Rust), both the virtualization context for their respective runtimes.  Some internal affordances for the runtime are in place to keep execution consistent; e.g., scry gates are stored on a stack to prevent re-entry if it scries.
+\lstinline[style=inlinecode]{++mink} is naturally jetted for efficiency, ultimately by \lstinline[style=inlinecode]{u3m_soft_run()} in Urbit's Vere (C) and by \lstinline[style=inlinecode]{interpret()} in NockApp's NockVM (formerly Sword) (Rust), both the virtualization context for their respective runtimes.  Some internal affordances for the runtime are in place to keep execution consistent; e.g., scry gates are stored on a stack to prevent re-entry if it scries.
 
 Nock is a crash-only language, which means that when something goes wrong, the exception is an exception for the runtime or virtual machine to handle as it will.  Typically, for a runtime this means an injection of the error trace back into the Nock kernel (cf.\ section ``\texttt{u3n}: nock execution'' in \texttt{u3.md} in the Urbit documentation\footnote{This section devoted a fair amount of attention to opcode 11 now 12 (it being written for Nock 5K) and hint evaluation.}).  (For \lstinline[style=inlinecode]{++mink}, errors are attempted to be front-run by the interpreter and thus bad Nock should not be executed as such.)
 
